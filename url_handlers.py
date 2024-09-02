@@ -27,9 +27,10 @@ def download_html(url):
             content_type = response.getheader("Content-Type")
             if content_type is None:
                 content_type = "text/html"
-            # todo : check if the header is text/html
-            if content_type.startswith("video"):
-                html = "This is a video url."
+            
+            # Check if the header is text/html
+            if not content_type.startswith("text/html"):
+                html = f"Unexpected content type: {content_type}. This is not an HTML page."
             else:
                 html = response.read()
                 # Check if the encoding is utf-8, otherwise convert to utf-8
@@ -41,8 +42,8 @@ def download_html(url):
         html = "Could not download this url."
     except urllib.error.URLError as e:
         html = "Could not download this url."
-    except:
-        html = "Could not download this url."
+    except Exception as e:
+        html = f"An unexpected error occurred: {e}"
     return html
 
 
