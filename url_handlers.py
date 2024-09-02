@@ -89,11 +89,32 @@ def removeEmptyLines(data):
     return "\n".join(lines)
 
 
-# generate screenshot of the url using playwright
+# generate screenshot of the url using Playwright
 def generate_screenshot(index, url, browser):
     page = browser.new_page()
     page.goto(url)
-    # TODO Solve the cookie accept problem
+
+    # Solve the cookie accept problem
+    try:
+        # Attempt to find and click the cookie accept button
+        accept_button_selectors = [
+            'button[aria-label="Accept cookies"]',  # Example common selector
+            'button[aria-label="Accept all cookies"]',
+            'button:has-text("Accept")',
+            'button:has-text("I agree")',
+            'button:has-text("Got it")',
+            'button:has-text("OK")',
+            'button:has-text("Close")',
+        ]
+        
+        for selector in accept_button_selectors:
+            if page.query_selector(selector):
+                page.click(selector)
+                break
+    except Exception as e:
+        print(f"Cookie accept button not found or click failed: {e}")
+
+    # Take a screenshot
     page.screenshot(path=f"{asset_dir}{index}.png")
     page.close()
 
