@@ -471,15 +471,15 @@ class DefaultHandler(UrlHandler):
 
     def ensure_screenshot(self, index, url, browser):
         """Generate a screenshot if it does not already exist."""
-        if not os.path.isfile(f"{asset_dir}{index}.png") and not os.path.isfile(
-            f"{asset_dir}{index}.jpg"
-        ):
+        screenshot_png_path = f"{asset_dir}{index}.png"
+        screenshot_jpg_path = f"{asset_dir}{index}.jpg"
+
+        if not os.path.isfile(screenshot_png_path) and not os.path.isfile(screenshot_jpg_path):
             try:
                 generate_screenshot(index, url, browser)
             except Exception as e:
-                # TODO: Create a timeout/404 default jpg
+                # If screenshot generation fails, the code will fallback to "notfound.png"
                 print(f"Screenshot generation failed: {e}")
-                pass
 
     def get_image_path(self, index):
         """Return the image path, falling back to a default image if necessary."""
