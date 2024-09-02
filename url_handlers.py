@@ -349,7 +349,7 @@ class GithubHandler:
         return {
             "title": art.text,
             "url": art.mainurl,
-            "image": f"{asset_dir}/{index}.png",
+            "image": f"{asset_dir}{index}.png",
             "category": art.category,
             "firstline": firstSentence,
             "content": data,
