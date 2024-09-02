@@ -5,14 +5,7 @@ from playwright.sync_api import sync_playwright
 from fake_useragent import UserAgent
 from config import asset_dir, ISSUE
 from playwright.sync_api import sync_playwright
-
-from url_handlers import (
-    DefaultHandler,
-    GithubHandler,
-    PDFHandler,
-    YoutubeHandler,
-    download_html,
-)
+from url_handlers import DefaultHandler, GithubHandler, PDFHandler, YoutubeHandler
 
 os.makedirs(asset_dir, exist_ok=True)
 
@@ -96,8 +89,7 @@ def get_articles(soup):
                         suburla = span.find("a")
                         if suburla is not None:
                             suburl = suburla.get("href")
-                    art = article(mainurl, title, text,
-                                  subtext, suburl, category)
+                    art = article(mainurl, title, text, subtext, suburl, category)
                     articles.append(art)
                     print(art)
     return articles, categories
@@ -114,8 +106,7 @@ def download_html_with_playwright(url):
     return html
 
 
-html = download_html_with_playwright(
-    "https://mailchi.mp/hackernewsletter/" + ISSUE)
+html = download_html_with_playwright("https://mailchi.mp/hackernewsletter/" + ISSUE)
 soup = parse_html(html)
 header = get_header(soup)
 
@@ -146,8 +137,7 @@ paperdata["quoteLine"] = quoteLine
 paperdata["quoteAuthor"] = quoteAuthor
 
 
-DICT_VALS = {"data": paperdata,
-             "categories": categories, "newsitems": newsitems}
+DICT_VALS = {"data": paperdata, "categories": categories, "newsitems": newsitems}
 
 # Do the latex stuff
 PATH_JINJA2 = "."
