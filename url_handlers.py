@@ -441,41 +441,56 @@ class DefaultHandler(UrlHandler):
         return True
 
     def work(self, index, art, browser):
-        # TODO clean this up
+        # Ensure screenshot exists or generate it
+        self.ensure_screenshot(index, art.mainurl, browser)
 
-        # if file exists skip
+        # Load and process site content
+        sitecontent = loadordownload(index, art)
+        data = extract(sitecontent)
+        firstSentence, data = prep_body(data)
+
+        # Extract metadata
+        metadata = extract_metadata(sitecontent)
+        metadatadict = get_metadata(art.title, metadata.as_dict() if metadata else {})
+
+        # Determine the image path
+        image = self.get_image_path(index)
+
+        # Build the news properties
+        newsproperties = self.build_newsproperties(metadatadict, art.suburl)
+
+        return {
+            "title": art.text,
+            "url": art.mainurl,
+            "image": image,
+            "category": art.category,
+            "firstline": firstSentence,
+            "content": data,
+            "properties": newsproperties,
+        }
+
+    def ensure_screenshot(self, index, url, browser):
+        """Generate a screenshot if it does not already exist."""
         if not os.path.isfile(f"{asset_dir}{index}.png") and not os.path.isfile(
             f"{asset_dir}{index}.jpg"
         ):
             try:
-                generate_screenshot(index, art.mainurl, browser)
-            except:  # noqa: E722
-                # TODO : create a timeout/404 default jpg.
+                generate_screenshot(index, url, browser)
+            except Exception as e:
+                # TODO: Create a timeout/404 default jpg
+                print(f"Screenshot generation failed: {e}")
                 pass
 
-        sitecontent = loadordownload(index, art)
-        data = extract(sitecontent)
-
-        firstSentence, data = prep_body(data)
-
-        metadata = extract_metadata(sitecontent)
-
-        metadatadict = get_metadata(
-            art.title, metadata.as_dict() if metadata is not None else {}
-        )
-
-        # fall back
-        image = "notfound.png"
-        # image url can be either a png or a jpg
+    def get_image_path(self, index):
+        """Return the image path, falling back to a default image if necessary."""
         if os.path.isfile(f"{asset_dir}{index}.png"):
-            image = f"{asset_dir}{index}.png"
+            return f"{asset_dir}{index}.png"
+        elif os.path.isfile(f"{asset_dir}{index}.jpg"):
+            return f"{asset_dir}{index}.jpg"
+        return "notfound.png"
 
-        # potential interested metadata fields are: author, date, image, sitename
-        # not used , but for future reference :
-        # pagetype [object, article, website ]
-        # description
-        # categories and tags
-
+    def build_newsproperties(self, metadatadict, suburl):
+        """Build the list of news properties based on the available metadata."""
         newsproperties = []
 
         if isValidDictItem("author", metadatadict):
@@ -495,14 +510,5 @@ class DefaultHandler(UrlHandler):
                 }
             )
 
-        add_stats(newsproperties, metadatadict, art.suburl)
-
-        return {
-            "title": art.text,
-            "url": art.mainurl,
-            "image": image,
-            "category": art.category,
-            "firstline": firstSentence,
-            "content": data,
-            "properties": newsproperties,
-        }
+        add_stats(newsproperties, metadatadict, suburl)
+        return newsproperties
