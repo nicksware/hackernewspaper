@@ -27,7 +27,7 @@ def download_html(url):
             content_type = response.getheader("Content-Type")
             if content_type is None:
                 content_type = "text/html"
-            
+
             # Check if the header is text/html
             if not content_type.startswith("text/html"):
                 html = f"Unexpected content type: {content_type}. This is not an HTML page."
@@ -333,18 +333,37 @@ class GithubHandler:
         return is_github_repo(art.mainurl)
 
     def work(self, index, art, browser):
-        # TODO clean this up
-
         sitecontent = loadordownload(index, art)
         metadata = extract_metadata(sitecontent)
-        data = metadata.description + " " + extract(sitecontent)
-
+        data = self.prepare_data(metadata, sitecontent)
         firstSentence, data = prep_body(data)
 
         metadatadict = get_metadata(
             art.title, metadata.as_dict() if metadata is not None else {}
         )
 
+        newsproperties = self.build_newsproperties(metadatadict, art.suburl)
+
+        cached_download(metadata.image, index, "png")
+
+        return {
+            "title": art.text,
+            "url": art.mainurl,
+            "image": f"{asset_dir}/{index}.png",
+            "category": art.category,
+            "firstline": firstSentence,
+            "content": data,
+            "properties": newsproperties,
+        }
+
+    def prepare_data(self, metadata, sitecontent):
+        """Prepare the content data by combining metadata description and site content extraction."""
+        if metadata:
+            return metadata.description + " " + extract(sitecontent)
+        return extract(sitecontent)
+
+    def build_newsproperties(self, metadatadict, suburl):
+        """Build the list of news properties based on the available metadata."""
         newsproperties = []
 
         if isValidDictItem("author", metadatadict):
@@ -364,19 +383,8 @@ class GithubHandler:
                 }
             )
 
-        add_stats(newsproperties, metadatadict, art.suburl)
-
-        cached_download(metadata.image, index, "png")
-
-        return {
-            "title": art.text,
-            "url": art.mainurl,
-            "image": f"{asset_dir}/{index}.png",
-            "category": art.category,
-            "firstline": firstSentence,
-            "content": data,
-            "properties": newsproperties,
-        }
+        add_stats(newsproperties, metadatadict, suburl)
+        return newsproperties
 
 
 class PDFHandler:
