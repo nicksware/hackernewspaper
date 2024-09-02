@@ -123,9 +123,12 @@ with sync_playwright() as p:
     for index, art in enumerate(articles):
         for handler in handlers:
             if handler.test(art):
-                # TODO maybe make it so if it throws a exception fallback to another handler
-                newsitems.append(handler.work(index, art, browser))
-                break
+                try:
+                    newsitems.append(handler.work(index, art, browser))
+                    break  # Break the loop if the handler works successfully
+                except Exception as e:
+                    print(f"Handler {handler.__class__.__name__} failed with exception: {e}")
+                    continue  # Try the next handler if an exception occurs
     browser.close()
 
 quoteLine, quoteAuthor = parse_header(header)
