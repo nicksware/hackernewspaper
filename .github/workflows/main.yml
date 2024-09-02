@@ -3,9 +3,7 @@ name: Hacker newspaper
 on:
   workflow_dispatch:
   schedule:
-     - cron: '0 6 * * *'
-
-
+    - cron: "0 6 * * *"
 
 jobs:
   build:
@@ -15,14 +13,14 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: "pip"
 
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Determine next edition
         id: determine-edition
         run: |
@@ -69,10 +67,10 @@ jobs:
       - name: print tex file
         run: cat output.tex
 
-      - name: Setup Tectonic 
+      - name: Setup Tectonic
         uses: WtfJoke/setup-tectonic@v3
         with:
-           github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print Tectonic version
         run: tectonic --version
@@ -94,7 +92,7 @@ jobs:
         with:
           allowUpdates: true
           tag: ${{ steps.determine-edition.outputs.EDITION }}
-          name: "HackerNewsPaper #${{ steps.determine-edition.outputs.EDITION }}" 
+          name: "HackerNewsPaper #${{ steps.determine-edition.outputs.EDITION }}"
           body: "HackerNewsPaper #${{ steps.determine-edition.outputs.EDITION }}"
           artifacts: "HackerNewsPaper-${{ steps.determine-edition.outputs.EDITION }}.pdf"
           removeArtifacts: true
