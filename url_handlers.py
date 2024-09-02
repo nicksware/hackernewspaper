@@ -8,6 +8,7 @@ import yt_dlp
 import json
 from pypdf import PdfReader
 from PIL import Image
+from pdf2image import convert_from_path
 
 ua = UserAgent()
 
@@ -389,40 +390,37 @@ class GithubHandler:
 
 class PDFHandler:
     def test(self, art):
-        # Ofcourse this check isnt perfect but shoulod catch 99% of all pdf's
+        # This check should catch most PDFs
         return get_url_extension(art.mainurl) == ".pdf"
 
     def work(self, index, art, browser):
-        # TODO: fix screenshots for pdf's they currently do not work!
+        # Fix screenshots for PDFs
 
         metadatadict = get_metadata(art.title)
-
         data = ""
 
+        # Download the PDF if it hasn't been cached yet
         if cached_download(art.mainurl, index, "pdf"):
             pdf = f"{asset_dir}{index}.pdf"
+            # Convert the first page of the PDF to an image
+            self.generate_pdf_screenshot(pdf, index)
+
+            # Extract text from the PDF
             reader = PdfReader(pdf)
             number_of_pages = len(reader.pages)
             page = reader.pages[0]
             text = page.extract_text()
-            if number_of_pages != 1:
+            if number_of_pages > 1:
                 text += " " + reader.pages[1].extract_text()
             data = text
-        # temp remove all emoji stuff, until found decent solutions in latex
-        # solved : no longer necessary with Tectonic Typesetting.
-        # data = removeUnicode(data)
-        # data can contain a lot of characters, we only want the first 1500
-        # santize the data by removing % and /
 
+        # Prepare the body content
         firstSentence, data = prep_body(data)
 
-        image = "notfound.png"
-
-        if os.path.isfile(f"{asset_dir}{index}.png"):
-            image = f"{asset_dir}{index}.png"
+        # Set the image (fallback to "notfound.png" if the image isn't generated)
+        image = self.get_image_path(index)
 
         newsproperties = []
-
         add_stats(newsproperties, metadatadict, art.suburl)
 
         return {
@@ -434,6 +432,22 @@ class PDFHandler:
             "content": data,
             "properties": newsproperties,
         }
+
+    def generate_pdf_screenshot(self, pdf_path, index):
+        """Generate a screenshot for the PDF's first page."""
+        try:
+            pages = convert_from_path(pdf_path, first_page=1, last_page=1)
+            if pages:
+                image_path = f"{asset_dir}{index}.png"
+                pages[0].save(image_path, "PNG")
+        except Exception as e:
+            print(f"Failed to generate PDF screenshot: {e}")
+
+    def get_image_path(self, index):
+        """Return the image path, falling back to a default image if necessary."""
+        if os.path.isfile(f"{asset_dir}{index}.png"):
+            return f"{asset_dir}{index}.png"
+        return "notfound.png"
 
 
 class DefaultHandler(UrlHandler):
@@ -474,7 +488,9 @@ class DefaultHandler(UrlHandler):
         screenshot_png_path = f"{asset_dir}{index}.png"
         screenshot_jpg_path = f"{asset_dir}{index}.jpg"
 
-        if not os.path.isfile(screenshot_png_path) and not os.path.isfile(screenshot_jpg_path):
+        if not os.path.isfile(screenshot_png_path) and not os.path.isfile(
+            screenshot_jpg_path
+        ):
             try:
                 generate_screenshot(index, url, browser)
             except Exception as e:
