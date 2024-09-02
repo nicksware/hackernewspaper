@@ -64,9 +64,6 @@ jobs:
       - name: Execute Python script
         run: python generator.py ${{steps.determine-edition.outputs.EDITION }}
 
-      - name: print tex file
-        run: cat output.tex
-
       - name: Setup Tectonic
         uses: WtfJoke/setup-tectonic@v3
         with:
